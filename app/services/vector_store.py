@@ -47,10 +47,23 @@ class VectorStoreService:
             self.client = QdrantClient(path=settings.QDRANT_PATH)
             
         self.collection_name = settings.COLLECTION_NAME
-        # Initialize both dense and sparse models
-        self.dense_model = TextEmbedding(model_name=settings.EMBEDDING_MODEL)
-        self.sparse_model = SparseTextEmbedding(model_name=settings.SPARSE_EMBEDDING_MODEL)
+        self._dense_model = None
+        self._sparse_model = None
         self._ensure_collection_exists()
+
+    @property
+    def dense_model(self):
+        if self._dense_model is None:
+            logger.info("Lazily loading Dense Embedding Model: %s", settings.EMBEDDING_MODEL)
+            self._dense_model = TextEmbedding(model_name=settings.EMBEDDING_MODEL)
+        return self._dense_model
+
+    @property
+    def sparse_model(self):
+        if self._sparse_model is None:
+            logger.info("Lazily loading Sparse Embedding Model: %s", settings.SPARSE_EMBEDDING_MODEL)
+            self._sparse_model = SparseTextEmbedding(model_name=settings.SPARSE_EMBEDDING_MODEL)
+        return self._sparse_model
 
     def _ensure_collection_exists(self):
         """Creates the collection if it doesn't exist."""

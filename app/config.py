@@ -1,4 +1,6 @@
+import json
 import logging
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -9,9 +11,22 @@ class Settings(BaseSettings):
     # --- Application ---
     APP_NAME: str = "Smart Copilot"
     LOG_LEVEL: str = "INFO"
+    WEB_CONCURRENCY: int = 1 # Force 1 worker for Render Free Tier (memory)
 
     # --- CORS ---
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v):
+        if isinstance(v, str):
+            try:
+                # Try to parse as a JSON list (e.g. '["http://..."]')
+                return json.loads(v)
+            except json.JSONDecodeError:
+                # Fallback to comma-separated string (e.g. "http://a.com,http://b.com")
+                return [i.strip() for i in v.split(",") if i.strip()]
+        return v
 
     # --- Qdrant ---
     QDRANT_PATH: str | None = "./local_qdrant_db"
