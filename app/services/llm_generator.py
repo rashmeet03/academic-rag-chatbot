@@ -1,6 +1,5 @@
 import logging
 import asyncio
-from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.tools import DuckDuckGoSearchRun
@@ -11,23 +10,17 @@ logger = logging.getLogger(__name__)
 
 class LLMGeneratorService:
     def __init__(self):
-        # Choose between Groq (Cloud) or Ollama (Local)
-        if settings.GROQ_API_KEY:
-            logger.info("Initializing Groq Cloud LLM (Free Tier)")
-            self.llm = ChatGroq(
-                api_key=settings.GROQ_API_KEY,
-                model="llama-3.3-70b-versatile", # Latest stable Groq model
-                temperature=settings.LLM_TEMPERATURE,
-                streaming=True,
-            )
-        else:
-            logger.info("Initializing Ollama Local LLM")
-            self.llm = ChatOllama(
-                model=settings.LLM_MODEL,
-                temperature=settings.LLM_TEMPERATURE,
-                num_ctx=8192,
-                streaming=True, 
-            )
+        # Initializing Groq Cloud LLM (Free Tier)
+        if not settings.GROQ_API_KEY:
+            raise ValueError("GROQ_API_KEY must be set in your .env file for the Academic Copilot to work in the cloud.")
+            
+        logger.info("Initializing Groq Cloud LLM (Free Tier)")
+        self.llm = ChatGroq(
+            api_key=settings.GROQ_API_KEY,
+            model="llama-3.3-70b-versatile", # Latest stable Groq model
+            temperature=settings.LLM_TEMPERATURE,
+            streaming=True,
+        )
 
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", """You are a strict, highly accurate Academic Copilot.
